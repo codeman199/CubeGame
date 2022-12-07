@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="CubeStyle.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+        canvas {
+            border: 1px solid #d3d3d3;
+            background-color: #f1f1f1;
+        }
+    </style>
+</head>
+<body onload="startGame()">
+    <div class="canvas">
+        <script>
+            var collect = new Audio("pop.mp3"); // buffers automatically when created
+            var myGamePiece;
+            var myEnemies = [];
+            var myObstacles = [];
+            var score = 0;
+            var highscore = 0;
+            var fallSpeed = .6;
+            var playerSpeed = 1;
+            var leftDown = false;
+            var rightDown = false;
+            var upDown = false;
+            var downDown = false;
+
+            /**
+             * Runs program at startup to initialize everything
+             **/
+            function startGame() {
+                myGamePiece = new component(30, 30, "black", 225, 120, "player");
+                Enemy1 = new component(30, 30, "red", 225, 10, "enemy");
+                Enemy2 = new component(30, 30, "red", 10, 200, "enemy");
+                Enemy3 = new component(30, 30, "red", 390, 200, "enemy");
+
+                obstacle1 = new component(10, 10, "green", 72, -60, "obstacle");
+                obstacle2 = new component(10, 10, "green", 230, -180, "obstacle");
+                obstacle3 = new component(10, 10, "green", 387, -60, "obstacle");
+
+                myScore = new component("15px", "Consolas", "black", 390, 15, "text");
+                myHighScore = new component("15px", "Consolas", "black", 357, 30, "text");
+                myEnemies[0] = Enemy1;
+                myEnemies[1] = Enemy2;
+                myEnemies[2] = Enemy3;
+                myObstacles[0] = obstacle1;
+                myObstacles[1] = obstacle2;
+                myObstacles[2] = obstacle3;
+
+                for (i = 0; i < myObstacles.length; i += 1) {
+                    myObstacles[i].speedY = fallSpeed;
+                }
+
+                myGameArea.start();
+            }
+
+            /**
+             * The random function, allows use of min and max values
+             **/
+            function random(min, max) {
+                return min + Math.random() * (max - min);
+            }
+
+            /**
+             * The contructor for the canvas, the main screen of the game
+             **/
+            var myGameArea = {
+                canvas: document.createElement("canvas"),
+                start: function () {
+                    this.canvas.width = 480;
+                    this.canvas.height = 270;
+                    this.context = this.canvas.getContext("2d");
+                    document.body.insertBefore(this.canvas, document.body.childNodes[0]);
+                    this.interval = setInterval(updateGameArea, 20);
+                },
+                clear: function () {
+                    this.context.clearRect(0, 0, this.canvas.width, this.canvas.height);
+                },
+                stop: function () {
+                    clearInterval(this.interval);
+                }
+            }
+
+            /**
+             * The component contructor componets include the player, enemies, obstacles, and score
+             **/
+            function component(width, height, color, x, y, type) {
+                this.type = type;
+                this.width = width;
+                this.height = height;
+                this.speedX = 0;
+                this.speedY = 0;
+                this.x = x;
+                this.y = y;
+
+                //Updates objects and repaints them on the scene
+                this.update = function () {
+                    ctx = myGameArea.context;
+                    if (this.type == "text") {
+                        ctx.font = this.width + " " + this.height;
+                        ctx.fillStyle = color;
+                        ctx.fillText(this.text, this.x, this.y);
+                    } else {
+                        ctx.fillStyle = color;
+                        ctx.fillRect(this.x, this.y, this.width, this.height);
+                    }
+                }
+
+                //Controls movement of components
+                this.newPos = function () {
+                    this.x += this.speedX;
+                    this.y += this.speedY;
+                }
+
+                //Checks the collision between otherObj, and "this"
+                this.checkCollision = function (otherObj) {
+                    var myleft = this.x;
+                    var myright = this.x + (this.width);
+                    var mytop = this.y;
+                    var mybottom = this.y + (this.height);
+                    var otherleft = otherObj.x;
+                    var otherright = otherObj.x + (otherObj.width);
+                    var othertop = otherObj.y;
+                    var otherbottom = otherObj.y + (otherObj.height);
+                    var crash = true;
+                    if ((mybottom < othertop) || (mytop > otherbottom) || (myright < otherleft) || (myleft > otherright)) {
+                        crash = false;
+                    }
+                    return crash;
+                }
+
+                //Keeps obstacles falling in the screen by moving them up after each cycle
+                this.checkObjectLocation = function () {
+                    if (this.y >= 300) {
+                        this.y = random(-90, -20);
+                        if (this.speedY < 15) {
+                            this.speedY += .2;
+                        }
+                    }
+                }
+
+                //Checks to keep the player inbounds
+                this.checkPlayerLocation = function () {
+                    if (this.x >= 465) {
+                        this.x = 465;
+                    }
+
+                    if (this.x <= -15) {
+                        this.x = -15;
+                    }
+
+                    if (this.y <= -15) {
+                        this.y = -15;
+                    }
+
+                    if (this.y >= 255) {
+                        this.y = 255;
+                    }
+                }
+            }
+
+            function retry() {
+                //stops game to avoid bugs
+                myGameArea.stop();
+
+                //Reset player info
+                myGamePiece.x = 225;
+                myGamePiece.y = 120;
+                playerSpeed = 1;
+                score = 0;
+
+                //Reset Enemies
+                Enemy1.x = 225;
+                Enemy1.y = 10;
+                Enemy2.x = 10;
+                Enemy2.y = 200;
+                Enemy3.x = 390;
+                Enemy3.y = 200;
+
+                //Reset Obstacles
+                obstacle1.x = 72;
+                obstacle1.y = -60;
+                obstacle2.x = 230;
+                obstacle2.y = -180;
+                obstacle3.x = 387;
+                obstacle3.y = -60;
+                fallSpeed = .6;
+                for (i = 0; i < myObstacles.length; i += 1) {
+                    myObstacles[i].speedY = fallSpeed;
+                }
+
+                //Approve game for start
+                myGameArea.start();
+            }
+
+            /**
+             * Updates all components of the game including score, player, enemies, and obstacles
+             **/
+            function updateGameArea() {
+                myGameArea.clear();
+                myGamePiece.newPos();
+                myGamePiece.checkPlayerLocation();
+                myGamePiece.update();
+
+                //Updates all enemies
+                for (i = 0; i < myEnemies.length; i += 1) {
+                    myEnemies[i].update();
+                }
+
+                //Checks for obstacle collision
+                for (i = 0; i < myObstacles.length; i += 1) {
+                    myObstacles[i].checkObjectLocation();
+                    myObstacles[i].newPos();
+                    myObstacles[i].update();
+
+                    if (myGamePiece.checkCollision(myObstacles[i])) {
+                        if (highscore < score) {
+                            highscore = score;
+                        }
+                        myGameArea.stop();
+                    }
+                }
+
+                //Checks for enemy collision
+                for (i = 0; i < myEnemies.length; i += 1) {
+                    if (myGamePiece.checkCollision(myEnemies[i])) {
+                        myEnemies[i].x = random(0, 450);
+                        myEnemies[i].y = random(0, 240);
+                        score++;
+                        collect.currentTime = 0;
+                        collect.play();
+                        playerSpeed += .1;
+                        while (myEnemies[i].checkCollision(myGamePiece)) {
+                            myEnemies[i].x = random(0, 450);
+                            myEnemies[i].y = random(0, 240);
+                        }
+                        return;
+                    }
+                }
+                if (highscore < score) {
+                    highscore = score;
+                }
+
+                myScore.text = "SCORE: " + score;
+                myHighScore.text = "HIGHSCORE: " + highscore;
+                myScore.update();
+                myHighScore.update();
+            }
+
+            /**
+             * Listens for key presses and does the logic to activate movement
+             **/
+            document.addEventListener('keydown', function (event) {
+                //LEFT
+                if (event.keyCode == 37 || event.keyCode == 65) {
+                    myGamePiece.speedX = -playerSpeed;
+                    leftDown = true;
+                }  //UP
+                else if (event.keyCode == 38 || event.keyCode == 87) {
+                    myGamePiece.speedY = -playerSpeed;
+                    upDown = true;
+                }  //RIGHT
+                else if (event.keyCode == 39 || event.keyCode == 68) {
+                    myGamePiece.speedX = playerSpeed;
+                    rightDown = true;
+                }  //DOWN
+                else if (event.keyCode == 40 || event.keyCode == 83) {
+                    myGamePiece.speedY = playerSpeed;
+                    downDown = true;
+                }
+            });
+
+            /**
+             * Listens for key releases and does the logic to handle canceling movement
+             **/
+            document.addEventListener('keyup', function (event) {
+                //LEFT
+                if (event.keyCode == 37 || event.keyCode == 65) {
+                    if (!rightDown) {
+                        myGamePiece.speedX = 0;
+                    } else {
+                        myGamePiece.speedX = playerSpeed;
+                    }
+                    leftDown = false;
+                }  //UP
+                else if (event.keyCode == 38 || event.keyCode == 87) {
+                    if (!downDown) {
+                        myGamePiece.speedY = 0;
+                    } else {
+                        myGamePiece.speedY = playerSpeed;
+                    }
+                    upDown = false;
+                }  //RIGHT
+                else if (event.keyCode == 39 || event.keyCode == 68) {
+                    if (!leftDown) {
+                        myGamePiece.speedX = 0;
+                    } else {
+                        myGamePiece.speedX = -playerSpeed;
+                    }
+                    rightDown = false;
+                }  //DOWN
+                else if (event.keyCode == 40 || event.keyCode == 83) {
+                    if (!upDown) {
+                        myGamePiece.speedY = 0;
+                    } else {
+                        myGamePiece.speedY = -playerSpeed;
+                    }
+                    downDown = false;
+                }
+            });
+
+
+        </script>
+        </div>
+
+            <div class="rules">
+                <p>WELCOME TO CUBE GAME!</p>
+                <p>
+                    Use arrow keys or WASD to move.
+                </p>
+                <p>
+                    Collect the red squares to increase your speed and earn points.
+                </p>
+                <p>
+                    Avoid the green squares. Touching one will end your run!
+                </p>
+            </div>
+            <div class="retryArea">
+                <p>
+                    Click here to retry!
+                </p>
+                <button onclick="retry()">Retry</button>
+            </div>
+</body>
+</html>

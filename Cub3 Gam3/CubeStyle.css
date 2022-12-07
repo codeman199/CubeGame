@@ -1,0 +1,21 @@
+html {background-color: white}
+
+
+.rules {
+    border-radius: 25px;
+    background: #00cfcb;
+    width: 465px;
+    padding: 10px;
+    text-align: center;
+    color: white;
+}
+
+.retryArea {
+    border-radius: 25px;
+    background: #00cfcb;
+    width: 465px;
+    padding: 10px;
+    margin-top: 10px;
+    text-align: center;
+    color: white;
+}
